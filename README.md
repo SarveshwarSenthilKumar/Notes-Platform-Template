@@ -1,0 +1,1 @@
+This is the repo where I will create a separate unspecified version of LexiconJuris for other notes usage.
