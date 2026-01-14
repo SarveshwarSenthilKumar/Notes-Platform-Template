@@ -1,0 +1,14 @@
+Add note logs to track what is done each day
+add test feature
+add a unit distinguisher for unit tests, search by unit
+add an ai created example feature
+update readme and add everything done so far
+
+Duplicates for this year:
+Assault and theft
+Elements of a crime
+Mens rea and Actus reus
+Types of offences
+Parties to an offence
+Police and the process of arrest
+Levels of homicide

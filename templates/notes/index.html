@@ -1,0 +1,155 @@
+{% extends "notes/base.html" %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/notes-search.js') }}"></script>
+{% endblock %}
+
+{% block title %}My Notes{% endblock %}
+
+{% block extra_css %}
+<style>
+    .search-container {
+        margin-bottom: 2rem;
+        position: relative;
+    }
+    
+    .search-input {
+        width: 100%;
+        padding: 0.8rem 1rem;
+        padding-left: 2.5rem;
+        font-size: 1rem;
+        background: rgba(10, 25, 47, 0.7);
+        border: 1px solid rgba(0, 240, 255, 0.3);
+        border-radius: 4px;
+        color: #e6f1ff;
+        transition: all 0.3s ease;
+    }
+    
+    .search-input:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 2px rgba(0, 240, 255, 0.2);
+    }
+    
+    .search-icon {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #8892b0;
+    }
+    
+    .no-results {
+        text-align: center;
+        padding: 2rem;
+        color: #8892b0;
+        font-style: italic;
+    }
+    
+    .unit-section {
+        margin-bottom: 2.5rem;
+    }
+    
+    .highlight {
+        background-color: rgba(0, 240, 255, 0.3);
+        border-radius: 2px;
+        padding: 0 2px;
+    }
+    
+    .favorite {
+        color: #ffd700;
+        margin-right: 0.25rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 1000px; margin: 0 auto;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h1 style="color: var(--primary); margin: 0;">
+            My Notes
+        </h1>
+        <a href="{{ url_for('notes.add_note') }}" class="btn" style="background: var(--primary); color: #000; text-decoration: none; white-space: nowrap;">
+            <i class="fas fa-plus"></i> New Note
+        </a>
+    </div>
+    
+    <div class="search-container">
+        <input type="text" id="noteSearch" class="search-input" placeholder="Search notes..." autocomplete="off" style="padding-left: 1rem;">
+    </div>
+    
+    
+    <div id="notesContainer">
+        {% if notes_by_unit %}
+            {% for unit, notes in notes_by_unit.items() %}
+                <div class="unit-section" data-unit="{{ unit or 'general' }}">
+                    <h2 class="unit-header">
+                        {% if unit %}
+                            Unit {{ unit }}
+                        {% else %}
+                            General Notes
+                        {% endif %}
+                        <small class="unit-count" style="font-size: 0.8em; color: #8892b0; margin-left: 0.5em;">
+                            ({{ notes|length }} note{% if notes|length != 1 %}s{% endif %})
+                        </small>
+                    </h2>
+                    
+                    <div class="notes-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem;" data-unit="{{ unit or 'general' }}">
+                        {% for note in notes %}
+                            <div class="note-card" 
+                                 data-id="{{ note.id }}"
+                                 data-title="{{ note.title|lower }}" 
+                                 data-content="{{ note.content|lower }}" 
+                                 data-unit="{{ note.unit_number or 'general' }}"
+                                 data-tags="{{ note.tags|default('', true)|lower }}"
+                                 data-has-worksheet="{{ 'true' if note.has_worksheet else 'false' }}"
+                                 data-date="{{ (note.last_updated or note.created_date)|lower }}"
+                                 data-favorite="{{ 'favorite' if note.is_favorite else '' }}">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                    <h3 style="margin: 0 0 0.5rem 0; font-size: 1.1rem; color: var(--primary);">
+                                        {% if note.is_favorite %}<span class="favorite">★</span>{% endif %}
+                                        {{ note.title }}
+                                        {% if note.has_worksheet %}
+                                        <span style="margin-left: 0.5rem; font-size: 0.9em; color: #64ffda;" title="Has worksheet">
+                                            📎
+                                        </span>
+                                        {% endif %}
+                                    </h3>
+                                    <span class="note-date" style="color: #8892b0; font-size: 0.85rem;">
+                                        {{ note.last_updated or note.created_date }}
+                                    </span>
+                                </div>
+                                
+                                <div class="note-meta">
+                                    {% if note.unit_number %}
+                                        <span>Unit {{ note.unit_number }}</span>
+                                    {% else %}
+                                        <span>No unit</span>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="note-content" style="max-height: 200px; overflow: hidden; text-overflow: ellipsis;">
+                                    <div class="content-preview">
+                                        {{ note.content|truncate(200) }}
+                                    </div>
+                                </div>
+                                
+                                <div class="note-actions">
+                                    <a href="{{ url_for('notes.view_note', note_id=note.id) }}" class="btn" style="padding: 0.4rem 0.8rem; font-size: 0.9rem;">
+                                        <i class="fas fa-eye"></i> View
+                                    </a>
+                                    {% if session.get("name") %}
+                                    <a href="{{ url_for('notes.edit_note', note_id=note.id) }}" class="btn edit-btn" style="padding: 0.4rem 0.8rem; font-size: 0.9rem; background: rgba(0, 240, 255, 0.1); border: 1px solid var(--primary); color: var(--primary); transition: all 0.2s ease-in-out; margin-left: 0.5rem;">
+                                        <i class="fas fa-edit" style="margin-right: 4px;"></i> Edit
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,104 @@
+{% extends "dictionary/base.html" %}
+
+{% block title %}Add New Entry{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div style="max-width: 800px; margin: 0 auto;">
+        <h1 style="color: var(--primary); margin-bottom: 2rem;">Add New Dictionary Entry</h1>
+        
+        <div class="card" style="background: rgba(10, 25, 47, 0.7);">
+            <form method="POST" action="{{ url_for('dictionary.add_entry') }}">
+                <div style="margin-bottom: 1.5rem;">
+                    <label for="word_phrase" class="form-label">Word/Phrase *</label>
+                    <input type="text" id="word_phrase" name="word_phrase" class="form-control" 
+                           value="{{ word_phrase if word_phrase }}" required>
+                </div>
+                
+                <div style="margin-bottom: 1.5rem;">
+                    <label for="definition" class="form-label">Definition *</label>
+                    <textarea id="definition" name="definition" class="form-control" rows="4" required>{{ definition if definition }}</textarea>
+                </div>
+                
+                <div style="margin-bottom: 1.5rem;">
+                    <label for="example" class="form-label">Example Usage (Optional)</label>
+                    <textarea id="example" name="example" class="form-control" rows="3">{{ example if example }}</textarea>
+                    <small style="color: #8892b0; font-size: 0.9rem;">
+                        Provide an example sentence showing how this word/phrase is used in context.
+                    </small>
+                </div>
+
+                <div style="margin-bottom: 1.5rem;">
+                    <label for="unit_number" class="form-label">Unit Number (Optional)</label>
+                    <input type="number" id="unit_number" name="unit_number" class="form-control" 
+                           value="{{ unit_number if unit_number }}" min="1" step="1">
+                    <small style="color: #8892b0; font-size: 0.9rem;">
+                        The unit number this term is associated with (e.g., 1, 2, 3, etc.)
+                    </small>
+                </div>
+
+                <div style="margin-bottom: 2rem;">
+                    <label for="comments" class="form-label">Additional Comments (Optional)</label>
+                    <textarea id="comments" name="comments" class="form-control" rows="3">{{ comments if comments }}</textarea>
+                    <small style="color: #8892b0; font-size: 0.9rem;">
+                        Any additional notes or context about this term.
+                    </small>
+                </div>
+                
+                <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                    <button type="submit" class="btn" style="background: var(--primary); color: #000;">
+                        Save Entry
+                    </button>
+                    <a href="{{ url_for('dictionary.index') }}" class="btn" style="background: transparent; border: 1px solid var(--primary);">
+                        Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    h1 {
+        font-family: 'Orbitron', sans-serif;
+        font-weight: 700;
+        letter-spacing: 1px;
+    }
+    
+    .form-control {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(0, 240, 255, 0.2);
+        color: #fff;
+        font-size: 1rem;
+        transition: all 0.3s;
+    }
+    
+    .form-control:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 2px rgba(0, 240, 255, 0.2);
+        outline: none;
+    }
+    
+    .form-label {
+        display: block;
+        margin-bottom: 0.5rem;
+        color: var(--primary);
+        font-weight: 500;
+    }
+    
+    .btn {
+        padding: 0.7rem 1.8rem;
+        border-radius: 4px;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-size: 0.9rem;
+        transition: all 0.3s;
+    }
+    
+    .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    }
+</style>
+{% endblock %}

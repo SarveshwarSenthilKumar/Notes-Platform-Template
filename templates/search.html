@@ -1,0 +1,209 @@
+{% extends "dictionary/base.html" %}
+
+{% block title %}Search - LexiconJuris{% endblock %}
+
+{% block extra_css %}
+<style>
+    .search-container {
+        max-width: 800px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+    }
+    
+    .search-box {
+        position: relative;
+        margin-bottom: 2rem;
+    }
+    
+    .search-input {
+        width: 100%;
+        padding: 1rem 1.5rem;
+        font-size: 1.1rem;
+        background: rgba(10, 25, 47, 0.7);
+        border: 1px solid rgba(0, 240, 255, 0.3);
+        border-radius: 4px;
+        color: #e6f1ff;
+        transition: all 0.3s ease;
+    }
+    
+    .search-input:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 2px rgba(0, 240, 255, 0.2);
+    }
+    
+    .search-results {
+        margin-top: 2rem;
+    }
+    
+    .result-section {
+        margin-bottom: 2.5rem;
+    }
+    
+    .section-title {
+        color: var(--primary);
+        font-size: 1.4rem;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid rgba(0, 240, 255, 0.2);
+    }
+    
+    .result-item {
+        background: rgba(10, 25, 47, 0.3);
+        border-radius: 6px;
+        padding: 1.25rem;
+        margin-bottom: 1rem;
+        border-left: 3px solid var(--primary);
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .result-item:hover {
+        transform: translateX(5px);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+    
+    .result-title {
+        color: var(--primary);
+        font-size: 1.2rem;
+        margin: 0 0 0.5rem 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .result-type {
+        font-size: 0.8rem;
+        background: rgba(0, 240, 255, 0.2);
+        color: #fff;
+        padding: 0.2rem 0.5rem;
+        border-radius: 4px;
+    }
+    
+    .result-preview {
+        color: #a8b2d1;
+        margin: 0.5rem 0 0;
+        font-size: 0.95rem;
+        line-height: 1.6;
+    }
+    
+    .highlight {
+        background-color: rgba(0, 240, 255, 0.3);
+        border-radius: 2px;
+        padding: 0 2px;
+    }
+    
+    .no-results {
+        color: #8892b0;
+        font-style: italic;
+        text-align: center;
+        padding: 2rem 0;
+    }
+    
+    .search-meta {
+        color: #8892b0;
+        font-size: 0.9rem;
+        margin-bottom: 1.5rem;
+        text-align: center;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="search-container">
+    <form action="{{ url_for('search') }}" method="get" class="search-box">
+        <input 
+            type="text" 
+            name="q" 
+            value="{{ query }}" 
+            placeholder="Search in dictionary and notes..." 
+            class="search-input"
+            autofocus
+        >
+    </form>
+    
+    {% if query %}
+        <div class="search-meta">
+            Found {{ dictionary_results|length + notes_results|length }} results for "{{ query }}"
+        </div>
+        
+        <div class="search-results">
+            {% if dictionary_results %}
+                <div class="result-section">
+                    <h2 class="section-title">Dictionary Entries</h2>
+                    {% for result in dictionary_results %}
+                        <a href="{{ url_for('dictionary.view_entry', entry_id=result.id) }}" class="result-item">
+                            <h3 class="result-title">
+                                {{ result.word_phrase|safe }}
+                                <span class="result-type">Dictionary</span>
+                            </h3>
+                            {% if result.definition %}
+                                <p class="result-preview">
+                                    {{ result.definition|truncate(200, True)|safe }}
+                                </p>
+                            {% endif %}
+                        </a>
+                    {% endfor %}
+                </div>
+            {% endif %}
+            
+            {% if notes_results %}
+                <div class="result-section">
+                    <h2 class="section-title">Notes</h2>
+                    {% for result in notes_results %}
+                        <a href="{{ url_for('notes.view_note', note_id=result.id) }}" class="result-item">
+                            <h3 class="result-title">
+                                {{ result.title|safe }}
+                                <span class="result-type">Note</span>
+                            </h3>
+                            {% if result.content %}
+                                <p class="result-preview">
+                                    {{ result.content|striptags|truncate(200, True)|safe }}
+                                </p>
+                            {% endif %}
+                        </a>
+                    {% endfor %}
+                </div>
+            {% endif %}
+            
+            {% if not dictionary_results and not notes_results %}
+                <div class="no-results">
+                    No results found for "{{ query }}"
+                </div>
+            {% endif %}
+        </div>
+    {% else %}
+        <div class="no-results">
+            Enter a search term to find dictionary entries and notes
+        </div>
+    {% endif %}
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.querySelector('.search-input');
+    
+    // Focus the search input when the page loads
+    if (searchInput) {
+        searchInput.focus();
+        // Move cursor to the end of the input
+        const len = searchInput.value.length;
+        searchInput.setSelectionRange(len, len);
+    }
+    
+    // Add keyboard shortcut to focus search
+    document.addEventListener('keydown', function(e) {
+        // Cmd+K or Ctrl+K to focus search
+        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+            e.preventDefault();
+            if (searchInput) {
+                searchInput.focus();
+            }
+        }
+        // Escape to blur search
+        else if (e.key === 'Escape' && document.activeElement === searchInput) {
+            searchInput.blur();
+        }
+    });
+});
+</script>
+{% endblock %}

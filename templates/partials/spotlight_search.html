@@ -1,0 +1,568 @@
+<!-- Spotlight Search Modal -->
+<div id="spotlight-search" class="spotlight-search hidden">
+    <div class="spotlight-search-overlay"></div>
+    <div class="spotlight-search-container">
+        <div class="search-input-container">
+            <i class="fas fa-search search-icon"></i>
+            <input 
+                type="text" 
+                id="spotlight-search-input" 
+                class="search-input" 
+                placeholder="Search dictionary and notes..." 
+                autocomplete="off"
+                autofocus
+            >
+            <div class="keyboard-shortcut">
+                <span class="key">Esc</span> to close
+            </div>
+        </div>
+        
+        <div class="search-results">
+            <div class="result-section dictionary-results">
+                <h3 class="section-title" style="margin-left: 2%;">Dictionary</h3>
+                <div class="results-container" id="dictionary-results">
+                    <!-- Results will be populated here -->
+                </div>
+            </div>
+            
+            <div class="result-section notes-results">
+                <h3 class="section-title" style="margin-left: 2%;">Notes</h3>
+                <div class="results-container" id="notes-results">
+                    <!-- Results will be populated here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.spotlight-search {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding-top: 10vh;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+.spotlight-search.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.spotlight-search-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+}
+
+.spotlight-search-container {
+    position: relative;
+    width: 90%;
+    max-width: 800px;
+    max-height: 80vh;
+    background: #0a192f;
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+    transform: translateY(-20px);
+    transition: transform 0.2s ease;
+}
+
+.spotlight-search.show .spotlight-search-container {
+    transform: translateY(0);
+}
+
+.search-input-container {
+    position: relative;
+    padding: 1.5rem;
+    border-bottom: 1px solid rgba(0, 240, 255, 0.1);
+}
+
+.search-input {
+    width: 100%;
+    padding: 1rem 1rem 1rem 3rem;
+    font-size: 1.2rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(0, 240, 255, 0.2);
+    border-radius: 6px;
+    color: #e6f1ff;
+    transition: all 0.3s ease;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(0, 240, 255, 0.2);
+}
+
+.search-icon {
+    position: absolute;
+    left: 2.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #8892b0;
+    font-size: 1.1rem;
+}
+
+.keyboard-shortcut {
+    position: absolute;
+    right: 2.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #8892b0;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.key {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    padding: 0.2rem 0.5rem;
+    font-size: 0.8rem;
+    color: #e6f1ff;
+}
+
+.search-results {
+    max-height: calc(80vh - 90px);
+    overflow-y: auto;
+    padding: 0 1.5rem 1.5rem;
+}
+
+.result-section {
+    margin-bottom: 2rem;
+}
+
+.section-title {
+    color: var(--primary);
+    font-size: 1.1rem;
+    margin: 1.5rem 0 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(0, 240, 255, 0.2);
+}
+
+.result-item {
+    padding: 0.8rem 1rem;
+    margin: 0.5rem 0;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 6px;
+    transition: background 0.2s ease;
+    cursor: pointer;
+}
+
+.result-item:hover {
+    background: rgba(0, 240, 255, 0.1);
+}
+
+.result-title {
+    color: #e6f1ff;
+    font-weight: 500;
+    margin: 0 0 0.3rem 0;
+}
+
+.result-preview {
+    color: #a8b2d1;
+    font-size: 0.9rem;
+    margin: 0.3rem 0 0 0;
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.result-preview mark {
+    background-color: rgba(100, 255, 218, 0.2);
+    color: #64ffda;
+    padding: 0 2px;
+    border-radius: 3px;
+}
+
+.result-content {
+    padding: 0.5rem 0;
+}
+
+.result-date {
+    color: #8892b0;
+    font-size: 0.8rem;
+    margin-top: 0.3rem;
+    display: inline-block;
+}
+
+.result-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    color: #4a5568;
+    font-size: 0.8rem;
+    margin-top: 0.5rem;
+}
+
+.no-results {
+    color: #8892b0;
+    font-style: italic;
+    padding: 1rem 0;
+    text-align: center;
+}
+
+.highlight {
+    background-color: rgba(0, 240, 255, 0.2);
+    color: #64ffda;
+    padding: 0.1em 0.2em;
+    border-radius: 3px;
+}
+
+/* Loading animation */
+.loading {
+    display: flex;
+    justify-content: center;
+    padding: 1rem 0;
+}
+
+.loading:after {
+    content: "";
+    width: 20px;
+    height: 20px;
+    border: 2px solid #8892b0;
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .spotlight-search {
+        padding-top: 5vh;
+    }
+    
+    .spotlight-search-container {
+        width: 95%;
+    }
+    
+    .search-input {
+        font-size: 1rem;
+        padding-left: 2.5rem;
+    }
+    
+    .search-icon {
+        left: 2rem;
+    }
+    
+    .keyboard-shortcut {
+        display: none;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const spotlightSearch = document.getElementById('spotlight-search');
+    const searchInput = document.getElementById('spotlight-search-input');
+    const dictionaryResults = document.getElementById('dictionary-results');
+    const notesResults = document.getElementById('notes-results');
+    let searchTimeout;
+    let isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+    
+    // Show/hide spotlight search
+    function toggleSpotlightSearch() {
+        const isShowing = !spotlightSearch.classList.contains('show');
+        
+        // Force the browser to reflow/repaint
+        if (isShowing) {
+            spotlightSearch.style.display = 'flex';
+            void spotlightSearch.offsetHeight; // Trigger reflow
+        }
+        
+        spotlightSearch.classList.toggle('show', isShowing);
+        
+        if (isShowing) {
+            // Set focus and select in the next tick
+            requestAnimationFrame(() => {
+                searchInput.focus();
+                // Try both methods for maximum compatibility
+                searchInput.setSelectionRange(0, searchInput.value.length);
+                searchInput.select();
+                
+                // One more try after a small delay in case of animation
+                setTimeout(() => {
+                    searchInput.focus();
+                    searchInput.setSelectionRange(0, searchInput.value.length);
+                }, 50);
+            });
+        } else {
+            searchInput.value = '';
+            clearResults();
+            // Ensure we clean up display property
+            spotlightSearch.style.display = '';
+        }
+    }
+    
+    // Clear search results
+    function clearResults() {
+        dictionaryResults.innerHTML = '';
+        notesResults.innerHTML = '';
+    }
+    
+    // Show loading state
+    function showLoading(container) {
+        container.innerHTML = '<div class="loading"></div>';
+    }
+    
+    // Highlight search terms in text
+    function highlightText(text, query) {
+        if (!text || !query) return text || '';
+        
+        // Escape special regex characters
+        const escapeRegExp = (string) => {
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        };
+        
+        let result = String(text);
+        const searchTerms = query.split(/\s+/).filter(term => term.length > 0);
+        
+        // First, highlight exact phrase matches
+        const exactPhraseRegex = new RegExp(`(${escapeRegExp(query)})`, 'gi');
+        result = result.replace(exactPhraseRegex, '<mark>$1</mark>');
+        
+        // Then highlight individual terms that weren't already matched
+        searchTerms.forEach(term => {
+            if (term.length < 2) return; // Skip very short terms
+            const termRegex = new RegExp(`(?!<[^>]*?)(?<![^<])(?=[^>]*(<\/mark>|$))(${escapeRegExp(term)})`, 'gi');
+            result = result.replace(termRegex, (match, p1, p2, p3) => {
+                // Only replace if not already inside a mark tag
+                return match.includes('<mark>') ? match : `<mark>${match}</mark>`;
+            });
+        });
+        
+        return result;
+    }
+    
+    // Format date
+    function formatDate(dateString) {
+        const options = { year: 'numeric', month: 'short', day: 'numeric' };
+        return new Date(dateString).toLocaleDateString(undefined, options);
+    }
+    
+    // Make result items focusable and handle keyboard navigation
+    function makeResultsFocusable() {
+        document.querySelectorAll('.result-item').forEach((item, index) => {
+            item.setAttribute('tabindex', '0');
+        });
+    }
+
+    // Handle keyboard navigation for search results
+    function handleKeyboardNavigation(e) {
+        if (!spotlightSearch.classList.contains('show')) return;
+        
+        // Handle Ctrl+Enter for opening in new tab
+        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+            const activeElement = document.activeElement;
+            if (activeElement.classList.contains('result-item') && activeElement.dataset.href) {
+                e.preventDefault();
+                window.open(activeElement.dataset.href, '_blank');
+                return;
+            }
+        }
+        
+        // Skip other keyboard navigation if Ctrl or Meta key is pressed
+        if (e.ctrlKey || e.metaKey) return;
+
+        const activeElement = document.activeElement;
+        const results = Array.from(document.querySelectorAll('.result-item'));
+        const currentIndex = results.indexOf(activeElement);
+
+        switch(e.key) {
+            case 'ArrowDown':
+                e.preventDefault();
+                const nextIndex = currentIndex < results.length - 1 ? currentIndex + 1 : 0;
+                results[nextIndex]?.focus();
+                break;
+            case 'ArrowUp':
+                e.preventDefault();
+                const prevIndex = currentIndex > 0 ? currentIndex - 1 : results.length - 1;
+                results[prevIndex]?.focus();
+                break;
+            case 'Enter':
+                if (activeElement.classList.contains('result-item')) {
+                    e.preventDefault();
+                    activeElement.click();
+                }
+                break;
+        }
+    }
+
+    // Search function
+    function performSearch(query) {
+        if (query.length < 2) {
+            clearResults();
+            return;
+        }
+        
+        // Show loading states
+        showLoading(dictionaryResults);
+        showLoading(notesResults);
+        
+        // Fetch dictionary results
+        fetch(`/api/search/dictionary?q=${encodeURIComponent(query)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    dictionaryResults.innerHTML = `<div class="no-results">Error: ${data.error}</div>`;
+                    return;
+                }
+                
+                // Check if data is an array directly (from our API) or has a results property
+                const results = Array.isArray(data) ? data : (data.results || []);
+                
+                if (results.length === 0) {
+                    dictionaryResults.innerHTML = '<div class="no-results">No dictionary entries found</div>';
+                    return;
+                }
+                
+                let html = '';
+                results.forEach(entry => {
+                    const preview = entry.definition || entry.example || '';
+                    const highlightedTitle = highlightText(entry.word_phrase, query);
+                    const highlightedPreview = highlightText(preview.substring(0, 150) + (preview.length > 150 ? '...' : ''), query);
+                    
+                    html += `
+                        <div class="result-item" tabindex="0" data-href="/dictionary/entry/${entry.id}">
+                            <h4 class="result-title">${highlightedTitle}</h4>
+                            <p class="result-preview">${highlightedPreview}</p>
+                        </div>
+                    `;
+                });
+                
+                dictionaryResults.innerHTML = html;
+            })
+            .catch(error => {
+                console.error('Error fetching dictionary results:', error);
+                dictionaryResults.innerHTML = '<div class="no-results">Error loading results</div>';
+            });
+        
+        // Fetch notes results
+        fetch(`/api/search/notes?q=${encodeURIComponent(query)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    notesResults.innerHTML = `<div class="no-results">Error: ${data.error}</div>`;
+                    return;
+                }
+                
+                // Check if data is an array directly (from our API) or has a results property
+                const results = Array.isArray(data) ? data : (data.results || []);
+                
+                if (results.length === 0) {
+                    notesResults.innerHTML = '<div class="no-results">No notes found</div>';
+                    return;
+                }
+                
+                let html = '';
+                results.forEach(note => {
+                    const title = note.title || 'Untitled Note';
+                    const content = note.content || '';
+                    const highlightedTitle = highlightText(title, query);
+                    
+                    // Create a preview with highlighted terms
+                    let preview = note.snippet || content.substring(0, 200);
+                    if (preview.length > 200) {
+                        preview = preview.substring(0, 200) + '...';
+                    }
+                    const highlightedPreview = highlightText(preview, query);
+                    
+                    // Format the last updated time
+                    const lastUpdated = note.last_updated || note.created_at || new Date().toISOString();
+                    const formattedDate = formatDate(lastUpdated);
+                    
+                    html += `
+                        <div class="result-item" tabindex="0" data-href="/notes/view/${note.id}">
+                            <div class="result-content">
+                                <h4 class="result-title">${highlightedTitle}</h4>
+                                <p class="result-preview">${highlightedPreview}</p>
+                                <div class="result-meta">
+                                    <span class="result-date">${formattedDate}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                notesResults.innerHTML = html;
+            })
+            .catch(error => {
+                console.error('Error fetching notes results:', error);
+                notesResults.innerHTML = '<div class="no-results">Error loading results</div>';
+            });
+    }
+    
+    // Add keyboard navigation event listener
+    document.addEventListener('keydown', handleKeyboardNavigation);
+
+    // Event listeners
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        const query = searchInput.value.trim();
+        
+        if (query.length < 2) {
+            clearResults();
+            return;
+        }
+        
+        searchTimeout = setTimeout(() => {
+            performSearch(query);
+        }, 300);
+    });
+    
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        // Cmd+K or Ctrl+K to toggle search
+        if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+            e.preventDefault();
+            toggleSpotlightSearch();
+        }
+        
+        // ESC to close search
+        if (e.key === 'Escape' && spotlightSearch.classList.contains('show')) {
+            e.preventDefault();
+            toggleSpotlightSearch();
+        }
+    });
+    
+    // Close when clicking outside or pressing Escape
+    spotlightSearch.addEventListener('click', function(e) {
+        if (e.target === spotlightSearch) {
+            toggleSpotlightSearch();
+        }
+    });
+
+    // Handle clicks on result items
+    document.addEventListener('click', function(e) {
+        const resultItem = e.target.closest('.result-item');
+        if (resultItem && resultItem.dataset.href) {
+            window.location.href = resultItem.dataset.href;
+        }
+    });
+
+    // Make results focusable when search is shown
+    searchInput.addEventListener('focus', makeResultsFocusable);
+});
+</script>

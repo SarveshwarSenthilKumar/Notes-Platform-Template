@@ -1,0 +1,113 @@
+{% extends "dictionary/base.html" %}
+
+{% block title %}Search Results for "{{ query }}" - Law Notes{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div style="margin-bottom: 2rem;">
+        <a href="{{ url_for('dictionary.index') }}" style="color: var(--primary); text-decoration: none; display: inline-flex; align-items: center; margin-bottom: 1rem;">
+            ← Back to Dictionary
+        </a>
+        
+        <h1 style="color: var(--primary); margin-bottom: 1.5rem;">
+            Search Results for "{{ query }}"
+        </h1>
+        
+        <div style="margin-bottom: 2rem;">
+            <form action="{{ url_for('dictionary.search') }}" method="GET" style="display: flex; gap: 1rem;">
+                <input type="text" name="q" placeholder="Search dictionary..." class="form-control" 
+                       value="{{ query }}" style="flex: 1;">
+                <button type="submit" class="btn" style="background: var(--primary); color: #000;">
+                    Search
+                </button>
+            </form>
+        </div>
+        
+        {% if entries %}
+            <p style="color: #8892b0; margin-bottom: 1.5rem;">
+                Found {{ entries|length }} result{% if entries|length != 1 %}s{% endif %}
+            </p>
+            
+            <div class="search-results" style="display: flex; flex-direction: column; gap: 1.5rem;">
+                {% for entry in entries %}
+                    <div class="card" style="background: rgba(10, 25, 47, 0.7); transition: all 0.3s;">
+                        <a href="{{ url_for('dictionary.view_entry', entry_id=entry.id) }}" style="text-decoration: none;">
+                            <h3 style="color: var(--primary); margin-top: 0; margin-bottom: 0.5rem;">
+                                {{ entry.word_phrase }}
+                            </h3>
+                            <p style="color: #a8b2d1; margin-bottom: 0.5rem;">
+                                {{ entry.definition|truncate(200) }}
+                            </p>
+                            <div style="display: flex; gap: 1rem; font-size: 0.85rem; color: #5d6880;">
+                                <span>👁️ {{ entry.views or 0 }} views</span>
+                                <span>•</span>
+                                <span>📅 {{ entry.created_date }}</span>
+                            </div>
+                        </a>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="card" style="text-align: center; padding: 3rem 2rem; background: rgba(10, 25, 47, 0.7);">
+                <h3 style="color: var(--primary); margin-top: 0;">No results found</h3>
+                <p style="color: #8892b0; margin-bottom: 1.5rem;">
+                    We couldn't find any entries matching "{{ query }}".
+                </p>
+                <div style="display: flex; gap: 1rem; justify-content: center;">
+                    <a href="{{ url_for('dictionary.index') }}" class="btn" style="background: var(--primary); color: #000;">
+                        View All Entries
+                    </a>
+                    <a href="{{ url_for('dictionary.add_entry') }}" class="btn" style="background: transparent; border: 1px solid var(--primary);">
+                        Add New Entry
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    .card {
+        transition: all 0.3s ease;
+        border: 1px solid rgba(0, 240, 255, 0.1);
+    }
+    
+    .card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        border-color: rgba(0, 240, 255, 0.3);
+    }
+    
+    .form-control {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(0, 240, 255, 0.2);
+        color: #fff;
+        font-size: 1rem;
+        padding: 0.8rem 1rem;
+        border-radius: 4px;
+    }
+    
+    .form-control:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 2px rgba(0, 240, 255, 0.2);
+        outline: none;
+    }
+    
+    .btn {
+        padding: 0.7rem 1.5rem;
+        border-radius: 4px;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-size: 0.9rem;
+        transition: all 0.3s;
+        text-decoration: none;
+        display: inline-block;
+    }
+    
+    .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    }
+</style>
+{% endblock %}

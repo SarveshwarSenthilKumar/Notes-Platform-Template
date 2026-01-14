@@ -1,0 +1,541 @@
+{% extends "dictionary/base.html" %}
+
+{% block title %}Unit {{ unit_number }} Test{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Debug Information -->
+    <div class="alert alert-warning">
+        <h4>Debug Information</h4>
+        <p>Unit: {{ unit_number }}</p>
+        <p>Number of questions: {{ test_questions|length }}</p>
+        <p>Template: {{ self._TemplateReference__context.name }}</p>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4">Unit {{ unit_number }} Practice Test</h1>
+            
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                This test includes {{ test_questions|length }} questions based on your notes and dictionary entries for this unit.
+            </div>
+            
+            <form id="testForm">
+                {% for question in test_questions %}
+                <div class="card mb-4 question-card" data-type="{{ question.type }}">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">Question {{ loop.index }}</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <p class="question-text mb-0">{{ question.question|safe }}</p>
+                            <button type="button" class="btn btn-sm btn-outline-primary check-single" data-question-index="{{ loop.index0 }}">
+                                <i class="fas fa-check"></i> Check Answer
+                            </button>
+                        </div>
+                        
+                        {% if question.type == 'multiple_choice' %}
+                            <div class="form-group">
+                                {% for option in question.options %}
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" 
+                                           name="q{{ loop.index0 }}" id="q{{ loop.index0 }}_{{ loop.index }}" 
+                                           value="{{ option }}" required>
+                                    <label class="form-check-label" for="q{{ loop.index0 }}_{{ loop.index }}">
+                                        {{ option }}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            
+                        {% elif question.type == 'fill_blank' %}
+                            <div class="form-group">
+                                <input type="text" class="form-control answer-input" 
+                                       name="q{{ loop.index0 }}" placeholder="Your answer..." required>
+                            </div>
+                            
+                        {% else %}
+                            <div class="form-group">
+                                <textarea class="form-control answer-input" name="q{{ loop.index0 }}" 
+                                          rows="3" placeholder="Your answer..." required></textarea>
+                            </div>
+                        {% endif %}
+                        
+                        <div class="answer-feedback mt-3 d-none">
+                            <div class="alert d-none" role="alert">
+                                <span class="feedback-icon"></span>
+                                <span class="feedback-text"></span>
+                                <div class="correct-answer mt-2"></div>
+                            </div>
+                            <div class="user-answer"></div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                
+                <div class="d-flex justify-content-between mb-5">
+                    <div>
+                        <button type="button" class="btn btn-primary me-2" id="checkAllAnswers">
+                            <i class="fas fa-check-double me-2"></i>Check All Answers
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" id="resetTest">
+                            <i class="fas fa-undo me-2"></i>Reset Test
+                        </button>
+                    </div>
+                    <a href="{{ url_for('tests.generate_test', unit_number=unit_number) }}" 
+                       class="btn btn-outline-secondary">
+                        <i class="fas fa-sync-alt me-2"></i>Generate New Test
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const checkAllButton = document.getElementById('checkAllAnswers');
+    const resetButton = document.getElementById('resetTest');
+    const questions = document.querySelectorAll('.question-card');
+    const singleCheckButtons = document.querySelectorAll('.check-single');
+    
+    // Store questions data in a JavaScript variable
+    const questionsData = JSON.parse('{{ test_questions|tojson|safe }}');
+    let testSubmitted = false;
+    
+    // Function to normalize text for comparison
+    function normalizeText(text) {
+        return text.toLowerCase()
+            .replace(/[^\w\s]/g, '')  // Remove punctuation
+            .replace(/\s+/g, ' ')      // Replace multiple spaces with single space
+            .trim();
+    }
+
+    // Function to check if answer is correct based on question type
+    function checkAnswer(questionType, userAnswer, correctAnswer) {
+        if (!userAnswer) return false;
+        
+        const normalizedUser = normalizeText(userAnswer);
+        const normalizedCorrect = normalizeText(correctAnswer);
+        
+        switch(questionType) {
+            case 'multiple_choice':
+                return normalizedUser === normalizedCorrect;
+                
+            case 'fill_blank':
+                // Check if user's answer is contained in the correct answer or vice versa
+                return normalizedCorrect.includes(normalizedUser) || 
+                       normalizedUser.includes(normalizedCorrect);
+                       
+            case 'short_answer':
+            case 'definition':
+                // For short answers, check if any of the key terms match
+                const correctTerms = normalizedCorrect.split(/\s+/);
+                const userTerms = normalizedUser.split(/\s+/);
+                
+                // Count matching terms
+                const matchingTerms = userTerms.filter(term => 
+                    term.length > 3 && correctTerms.includes(term)
+                ).length;
+                
+                // Consider correct if at least half of the key terms match
+                const threshold = Math.max(1, correctTerms.length * 0.4);
+                return matchingTerms >= threshold;
+                
+            default:
+                return false;
+        }
+    }
+    
+    // Store correct answers in data attributes and set up question cards
+    questions.forEach((card, index) => {
+        const question = questionsData[index];
+        card.dataset.correctAnswer = question.answer;
+        card.dataset.questionType = question.type;
+        
+        // Add question type indicator
+        const typeBadge = document.createElement('span');
+        typeBadge.className = 'badge bg-secondary float-end';
+        typeBadge.textContent = question.type.replace('_', ' ');
+        card.querySelector('.card-header').appendChild(typeBadge);
+    });
+    
+    // Function to check a single question
+    function checkQuestion(card) {
+        const feedbackDiv = card.querySelector('.answer-feedback');
+        const alertDiv = feedbackDiv.querySelector('.alert');
+        const correctAnswer = card.dataset.correctAnswer;
+        const questionType = card.dataset.questionType;
+        let userAnswer = '';
+        
+        // Get user's answer based on question type
+        if (questionType === 'multiple_choice') {
+            const selected = card.querySelector('input[type="radio"]:checked');
+            userAnswer = selected ? selected.value : '';
+            
+            // Disable all radio buttons after checking
+            const radioButtons = card.querySelectorAll('input[type="radio"]');
+            radioButtons.forEach(radio => {
+                radio.disabled = true;
+            });
+        } else if (questionType === 'fill_blank') {
+            const input = card.querySelector('input[type="text"]');
+            userAnswer = input ? input.value : '';
+            input.readOnly = true;
+        } else {
+            const textarea = card.querySelector('textarea');
+            userAnswer = textarea ? textarea.value : '';
+            textarea.readOnly = true;
+        }
+        
+        // Check if answer is correct
+        const isCorrect = checkAnswer(questionType, userAnswer, correctAnswer);
+        
+        // Show feedback
+        const correctAnswerSpan = card.querySelector('.correct-answer');
+        const userAnswerDiv = card.querySelector('.user-answer');
+        const feedbackIcon = card.querySelector('.feedback-icon');
+        const feedbackText = card.querySelector('.feedback-text');
+        
+        // Format the correct answer for display
+        let formattedCorrectAnswer = correctAnswer;
+        if (questionType === 'fill_blank') {
+            // For fill-in-the-blank, show the complete sentence
+            const questionText = card.querySelector('.question-text').textContent;
+            formattedCorrectAnswer = questionText.replace('__________', correctAnswer);
+        }
+        
+        if (correctAnswerSpan) {
+            correctAnswerSpan.innerHTML = formattedCorrectAnswer;
+        }
+        
+        if (userAnswerDiv) {
+            userAnswerDiv.innerHTML = userAnswer ? 
+                `<strong>Your answer:</strong> ${userAnswer}` : 
+                '<span class="text-muted">No answer provided</span>';
+        }
+        
+        // Style based on correctness
+        if (isCorrect) {
+            alertDiv.classList.remove('alert-danger', 'd-none');
+            alertDiv.classList.add('alert-success');
+            feedbackIcon.className = 'fas fa-check-circle me-2';
+            feedbackText.innerHTML = `<strong>Correct!</strong>`;
+            card.classList.add('border-success');
+        } else {
+            alertDiv.classList.remove('alert-success', 'd-none');
+            alertDiv.classList.add('alert-danger');
+            feedbackIcon.className = 'fas fa-times-circle me-2';
+            feedbackText.innerHTML = `<strong>Incorrect.</strong> The ${questionType === 'fill_blank' ? 'complete sentence would be:' : 'correct answer is:'}`;
+            card.classList.add('border-danger');
+        }
+        
+        feedbackDiv.classList.remove('d-none');
+        
+        // Disable the check button for this question
+        const checkButton = card.querySelector('.check-single');
+        if (checkButton) {
+            checkButton.disabled = true;
+            checkButton.classList.remove('btn-outline-primary');
+            checkButton.classList.add('btn-outline-secondary');
+        }
+        
+        return isCorrect;
+    }
+    
+    // Check all answers
+    function checkAllAnswers() {
+        if (testSubmitted) return;
+        
+        let score = 0;
+        let totalPossible = 0;
+        let allAnswered = true;
+        
+        // First pass: Check if all questions are answered
+        questions.forEach((card, index) => {
+            const questionType = card.dataset.questionType;
+            let answered = false;
+            
+            if (questionType === 'multiple_choice') {
+                answered = card.querySelector('input[type="radio"]:checked') !== null;
+            } else if (questionType === 'fill_blank') {
+                const input = card.querySelector('input[type="text"]');
+                answered = input && input.value.trim() !== '';
+            } else {
+                const textarea = card.querySelector('textarea');
+                answered = textarea && textarea.value.trim() !== '';
+            }
+            
+            if (!answered) {
+                allAnswered = false;
+                card.classList.add('border-warning');
+                setTimeout(() => card.classList.remove('border-warning'), 2000);
+            }
+        });
+        
+        if (!allAnswered) {
+            alert('Please answer all questions before submitting.');
+            return;
+        }
+        
+        // Second pass: Check all answers
+        questions.forEach((card, index) => {
+            if (checkQuestion(card)) score++;
+            totalPossible++;
+        });
+        
+        // Show score in a nice toast notification
+        showScore(score, totalPossible);
+        testSubmitted = true;
+        
+        // Disable all check buttons
+        singleCheckButtons.forEach(button => {
+            button.disabled = true;
+            button.classList.remove('btn-outline-primary');
+            button.classList.add('btn-outline-secondary');
+        });
+    }
+    
+    // Show score in toast
+    function showScore(score, totalPossible) {
+        const scorePercentage = Math.round((score / totalPossible) * 100);
+        let scoreClass = 'bg-danger';
+        if (scorePercentage >= 80) scoreClass = 'bg-success';
+        else if (scorePercentage >= 50) scoreClass = 'bg-warning';
+        
+        const toastHTML = `
+            <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+                <div class="toast show" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="toast-header">
+                        <strong class="me-auto">Test Results</strong>
+                        <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                    <div class="toast-body ${scoreClass} text-white">
+                        <h5>You scored ${score} out of ${totalPossible} (${scorePercentage}%)</h5>
+                        <div class="progress mt-2" style="height: 20px;">
+                            <div class="progress-bar bg-white text-dark" role="progressbar" 
+                                 style="width: ${scorePercentage}%" 
+                                 aria-valuenow="${scorePercentage}" 
+                                 aria-valuemin="0" 
+                                 aria-valuemax="100">
+                                ${scorePercentage}%
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Remove any existing toasts
+        document.querySelectorAll('.toast-container').forEach(el => el.remove());
+        document.body.insertAdjacentHTML('beforeend', toastHTML);
+        
+        // Scroll to top to see first question
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        
+        // Update check all button
+        checkAllButton.disabled = true;
+        checkAllButton.innerHTML = '<i class="fas fa-check-double me-2"></i>Test Submitted';
+        checkAllButton.classList.remove('btn-primary');
+        checkAllButton.classList.add('btn-secondary');
+    }
+    
+    // Reset the test
+    function resetTest() {
+        questions.forEach((card, index) => {
+            // Reset form elements
+            if (card.dataset.questionType === 'multiple_choice') {
+                const radioButtons = card.querySelectorAll('input[type="radio"]');
+                radioButtons.forEach(radio => {
+                    radio.checked = false;
+                    radio.disabled = false;
+                });
+            } else if (card.dataset.questionType === 'fill_blank') {
+                const input = card.querySelector('input[type="text"]');
+                if (input) {
+                    input.value = '';
+                    input.readOnly = false;
+                }
+            } else {
+                const textarea = card.querySelector('textarea');
+                if (textarea) {
+                    textarea.value = '';
+                    textarea.readOnly = false;
+                }
+            }
+            
+            // Reset feedback
+            const feedbackDiv = card.querySelector('.answer-feedback');
+            if (feedbackDiv) feedbackDiv.classList.add('d-none');
+            
+            // Reset styles
+            card.classList.remove('border-success', 'border-danger', 'border-warning');
+            
+            // Reset check button
+            const checkButton = card.querySelector('.check-single');
+            if (checkButton) {
+                checkButton.disabled = false;
+                checkButton.classList.remove('btn-outline-secondary');
+                checkButton.classList.add('btn-outline-primary');
+            }
+        });
+        
+        // Reset test state
+        testSubmitted = false;
+        
+        // Reset check all button
+        checkAllButton.disabled = false;
+        checkAllButton.innerHTML = '<i class="fas fa-check-double me-2"></i>Check All Answers';
+        checkAllButton.classList.remove('btn-secondary');
+        checkAllButton.classList.add('btn-primary');
+        
+        // Remove any toasts
+        document.querySelectorAll('.toast-container').forEach(el => el.remove());
+    }
+    
+    // Function to handle single question check
+    function handleSingleCheck(button) {
+        const card = button.closest('.question-card');
+        const questionType = card.dataset.questionType;
+        let answered = false;
+        
+        // Check if question is answered
+        if (questionType === 'multiple_choice') {
+            answered = card.querySelector('input[type="radio"]:checked') !== null;
+        } else if (questionType === 'fill_blank') {
+            const input = card.querySelector('input[type="text"]');
+            answered = input && input.value.trim() !== '';
+        } else {
+            const textarea = card.querySelector('textarea');
+            answered = textarea && textarea.value.trim() !== '';
+        }
+        
+        if (!answered) {
+            card.classList.add('border-warning');
+            setTimeout(() => card.classList.remove('border-warning'), 2000);
+            return;
+        }
+        
+        checkQuestion(card);
+    }
+
+    // Event delegation for check answer buttons
+    document.addEventListener('click', function(e) {
+        // Handle check single answer button
+        if (e.target.closest('.check-single')) {
+            e.preventDefault();
+            handleSingleCheck(e.target.closest('.check-single'));
+        }
+    });
+
+    // Event listeners for main buttons
+    checkAllButton.addEventListener('click', checkAllAnswers);
+    resetButton.addEventListener('click', resetTest);
+    
+    // Allow Enter key to submit answer for text inputs
+    document.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter' && e.target.matches('input[type="text"]')) {
+            e.preventDefault();
+            const button = e.target.closest('.question-card').querySelector('.check-single');
+            if (button) handleSingleCheck(button);
+        }
+    });
+});
+    
+    // Auto-focus first input on page load
+    const firstInput = document.querySelector('input[type="text"], textarea');
+    if (firstInput) firstInput.focus();
+});
+</script>
+
+<style>
+.question-card {
+    transition: all 0.3s ease;
+    margin-bottom: 1.5rem;
+    border: 1px solid rgba(0,0,0,.125);
+}
+
+.question-card:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+}
+
+.question-card.border-success {
+    border-color: #198754 !important;
+    border-width: 2px;
+}
+
+.question-card.border-danger {
+    border-color: #dc3545 !important;
+    border-width: 2px;
+}
+
+.answer-feedback {
+    border-top: 1px solid #eee;
+    padding: 1rem 0 0;
+    margin-top: 1rem;
+}
+
+.correct-answer {
+    display: block;
+    background-color: #f8f9fa;
+    padding: 0.75rem;
+    border-radius: 0.25rem;
+    margin-top: 0.5rem;
+    border-left: 4px solid #198754;
+    font-weight: 500;
+}
+
+.user-answer {
+    margin: 0.5rem 0;
+    padding: 0.75rem;
+    background-color: #f8f9fa;
+    border-radius: 0.25rem;
+    border-left: 4px solid #6c757d;
+}
+
+/* Badge styling for question type */
+.badge {
+    font-size: 0.7rem;
+    text-transform: capitalize;
+    font-weight: 500;
+    padding: 0.35em 0.65em;
+}
+
+/* Toast notification */
+.toast {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.toast-body {
+    border-bottom-left-radius: 0.25rem;
+    border-bottom-right-radius: 0.25rem;
+}
+
+/* Progress bar for score */
+.progress {
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .question-card {
+        margin-bottom: 1rem;
+    }
+    
+    .card-header h5 {
+        font-size: 1.1rem;
+    }
+}
+</style>
+{% endblock %}

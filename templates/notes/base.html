@@ -1,0 +1,152 @@
+{% extends "dictionary/base.html" %}
+
+{% block extra_css %}
+<style>
+    .note-card {
+        background: rgba(10, 25, 47, 0.7);
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        transition: transform 0.3s, box-shadow 0.3s;
+        border-left: 3px solid var(--primary);
+    }
+    
+    .note-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    }
+    
+    .note-title {
+        color: var(--primary);
+        margin-top: 0;
+        margin-bottom: 0.5rem;
+        font-size: 1.3rem;
+    }
+    
+    .note-meta {
+        display: flex;
+        justify-content: space-between;
+        color: #8892b0;
+        font-size: 0.9rem;
+        margin-bottom: 1rem;
+    }
+    
+    .note-content {
+        color: #e6f1ff;
+        line-height: 1.6;
+        margin-bottom: 1rem;
+    }
+    
+    .note-actions {
+        display: flex;
+        gap: 0.8rem;
+        margin-top: 1rem;
+    }
+    
+    .favorite {
+        color: #ffd700;
+    }
+    
+    /* Search highlight styles */
+    .highlight {
+        background-color: rgba(100, 255, 218, 0.2);
+        color: #64ffda;
+        padding: 0.1em 0.2em;
+        border-radius: 3px;
+    }
+    
+    /* Search container */
+    .search-container {
+        position: relative;
+        margin-bottom: 1.5rem;
+    }
+    
+    .search-input {
+        width: 100%;
+        padding: 0.75rem 1rem 0.75rem 2.5rem;
+        border: 1px solid #1e2a3a;
+        border-radius: 4px;
+        background-color: #0a192f;
+        color: #e6f1ff;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+    }
+    
+    .search-input:focus {
+        outline: none;
+        border-color: #64ffda;
+        box-shadow: 0 0 0 2px rgba(100, 255, 218, 0.2);
+    }
+    
+    .search-icon {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #8892b0;
+    }
+    
+    .no-results {
+        text-align: center;
+        padding: 2rem;
+        color: #8892b0;
+        font-style: italic;
+        display: none;
+    }
+    
+    .no-results.hidden {
+        display: none;
+    }
+    
+    .unit-header {
+        color: var(--primary);
+        margin: 2rem 0 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid rgba(0, 240, 255, 0.3);
+    }
+    
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+    
+    .form-label {
+        display: block;
+        margin-bottom: 0.5rem;
+        color: var(--primary);
+        font-weight: 500;
+    }
+    
+    .form-control {
+        width: 100%;
+        padding: 0.75rem;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(0, 240, 255, 0.2);
+        color: #fff;
+        font-size: 1rem;
+        border-radius: 4px;
+        font-family: 'Roboto', sans-serif;
+    }
+    
+    .form-control:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 2px rgba(0, 240, 255, 0.2);
+        outline: none;
+    }
+    
+    textarea.form-control {
+        min-height: 150px;
+        resize: vertical;
+    }
+    
+    .checkbox-label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        cursor: pointer;
+    }
+    
+    .checkbox-label input[type="checkbox"] {
+        width: auto;
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,353 @@
+{% extends "dictionary/base.html" %}
+
+{% block title %}AI-Powered Test - Unit {{ unit_number }}{% endblock %}
+
+{% block styles %}
+<style>
+.chat-container {
+    max-width: 800px;
+    margin: 0 auto;
+    height: calc(100vh - 200px);
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.chat-header {
+    background: #4a6fa5;
+    color: white;
+    padding: 1rem;
+    text-align: center;
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.message {
+    max-width: 80%;
+    padding: 0.8rem 1.2rem;
+    border-radius: 1rem;
+    line-height: 1.5;
+    position: relative;
+    animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.assistant-message {
+    background: #f0f4f8;
+    color: #2d3748;
+    align-self: flex-start;
+    border-bottom-left-radius: 0.25rem;
+}
+
+.user-message {
+    background: #4a6fa5;
+    color: white;
+    align-self: flex-end;
+    border-bottom-right-radius: 0.25rem;
+}
+
+.chat-input-container {
+    padding: 1rem;
+    border-top: 1px solid #e2e8f0;
+    background: #f8fafc;
+}
+
+.chat-form {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.chat-input {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 1.5rem;
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.chat-input:focus {
+    border-color: #4a6fa5;
+    box-shadow: 0 0 0 2px rgba(74, 111, 165, 0.2);
+}
+
+.send-button {
+    background: #4a6fa5;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.send-button:hover {
+    background: #3a5a80;
+}
+
+.send-button:disabled {
+    background: #a0aec0;
+    cursor: not-allowed;
+}
+
+.typing-indicator {
+    display: flex;
+    gap: 0.25rem;
+    padding: 0.8rem 1.2rem;
+    background: #f0f4f8;
+    border-radius: 1rem;
+    align-self: flex-start;
+    margin-bottom: 1rem;
+}
+
+.typing-dot {
+    width: 8px;
+    height: 8px;
+    background: #a0aec0;
+    border-radius: 50%;
+    animation: typing 1.4s infinite ease-in-out;
+}
+
+.typing-dot:nth-child(1) { animation-delay: 0s; }
+.typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes typing {
+    0%, 60%, 100% { transform: translateY(0); }
+    30% { transform: translateY(-4px); }
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+    .message {
+        max-width: 90%;
+    }
+    
+    .chat-container {
+        height: calc(100vh - 160px);
+        border-radius: 0;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>AI-Powered Test - Unit {{ unit_number }}</h1>
+                <a href="{{ url_for('dictionary.index') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                </a>
+            </div>
+            
+            <div class="chat-container">
+                <div class="chat-header">
+                    <i class="fas fa-robot me-2"></i>AI Test Assistant
+                </div>
+                
+                <div class="chat-messages" id="chat-messages">
+                    <div class="typing-indicator" id="typing-indicator" style="display: none;">
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                    </div>
+                </div>
+                
+                <div class="chat-input-container">
+                    <form class="chat-form" id="chat-form">
+                        <input type="text" 
+                               class="chat-input" 
+                               id="user-input" 
+                               placeholder="Type your answer here..." 
+                               autocomplete="off"
+                               required>
+                        <button type="submit" class="send-button" id="send-button">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const chatForm = document.getElementById('chat-form');
+    const chatInput = document.getElementById('user-input');
+    const chatMessages = document.getElementById('chat-messages');
+    const typingIndicator = document.getElementById('typing-indicator');
+    const unitNumber = {{ unit_number }};
+    
+    let conversationHistory = [];
+    
+    // Function to add a message to the chat
+    function addMessage(role, content) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${role}-message`;
+        messageDiv.innerHTML = content.replace(/\n/g, '<br>');
+        chatMessages.insertBefore(messageDiv, typingIndicator);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+    
+    // Function to show/hide typing indicator
+    function setTyping(isTyping) {
+        typingIndicator.style.display = isTyping ? 'flex' : 'none';
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+    
+    // Function to send a message to the server
+    async function sendMessage(message) {
+        // Disable input while processing
+        chatInput.disabled = true;
+        const sendButton = document.getElementById('send-button');
+        sendButton.disabled = true;
+        
+        try {
+            setTyping(true);
+            
+            // Add user message to conversation history
+            const userMessage = { role: 'user', content: message };
+            conversationHistory.push(userMessage);
+            
+            // Add user message to chat
+            addMessage('user', message);
+            chatInput.value = '';
+            
+            // Send message to server
+            const response = await fetch('/api/ai_test/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({
+                    messages: conversationHistory
+                }),
+                credentials: 'same-origin'
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || 'Network response was not ok');
+            }
+            
+            const data = await response.json();
+            
+            if (data.error) {
+                throw new Error(data.error);
+            }
+            
+            if (!data.messages || !Array.isArray(data.messages) || data.messages.length === 0) {
+                throw new Error('Invalid response format from server');
+            }
+            
+            // Add assistant's response to conversation history and chat
+            const assistantMessage = data.messages[0];
+            conversationHistory.push(assistantMessage);
+            addMessage('assistant', assistantMessage.content);
+            
+        } catch (error) {
+            console.error('Chat error:', error);
+            const errorMessage = error.message || 'Sorry, there was an error processing your request. Please try again.';
+            addMessage('assistant', errorMessage);
+            
+            // Add error to conversation history
+            conversationHistory.push({
+                role: 'assistant',
+                content: errorMessage
+            });
+        } finally {
+            setTyping(false);
+            // Re-enable input
+            chatInput.disabled = false;
+            sendButton.disabled = false;
+            chatInput.focus();
+        }
+    }
+    
+    // Start the test when the page loads
+    async function startTest() {
+        try {
+            setTyping(true);
+            
+            const response = await fetch('/api/ai_test/start', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    unit_number: unitNumber
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.error) {
+                throw new Error(data.error);
+            }
+            
+            // Add assistant's welcome message to conversation history and chat
+            const welcomeMessage = data.messages[0].content;
+            conversationHistory.push({
+                role: 'assistant',
+                content: welcomeMessage
+            });
+            
+            addMessage('assistant', welcomeMessage);
+            
+        } catch (error) {
+            console.error('Error:', error);
+            addMessage('assistant', 'Sorry, there was an error starting the test. Please try again.');
+        } finally {
+            setTyping(false);
+        }
+    }
+    
+    // Handle form submission
+    chatForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const message = chatInput.value.trim();
+        if (message) {
+            await sendMessage(message);
+        }
+    });
+    
+    // Handle Enter key (but allow Shift+Enter for new line)
+    chatInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            chatForm.dispatchEvent(new Event('submit'));
+        }
+    });
+    
+    // Start the test when the page loads
+    startTest();
+});
+</script>
+{% endblock %}

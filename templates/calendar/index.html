@@ -1,0 +1,94 @@
+{% extends "calendar/base.html" %}
+
+{% block calendar_content %}
+<div class="card">
+    <div class="card-body">
+        <div id="calendar"></div>
+    </div>
+</div>
+
+<!-- Event Details Modal -->
+<div class="modal fade" id="eventModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="eventModalTitle">Event Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="eventModalBody">
+                Loading...
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <a href="#" class="btn btn-primary" id="editEventBtn">Edit</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var calendarEl = document.getElementById('calendar');
+    var calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,timeGridDay'
+        },
+        events: '{{ url_for("calendar.api_entries") }}',
+        eventClick: function(info) {
+            var eventUrl = info.event.url;
+            var eventId = info.event.id;
+            
+            // Set the edit button href
+            document.getElementById('editEventBtn').href = '/calendar/entry/' + eventId + '/edit';
+            
+            // Load the event details
+            fetch('/calendar/entry/' + eventId)
+                .then(response => response.text())
+                .then(html => {
+                    // Extract just the content we want from the response
+                    var temp = document.createElement('div');
+                    temp.innerHTML = html;
+                    var eventContent = temp.querySelector('.event-details').innerHTML;
+                    document.getElementById('eventModalBody').innerHTML = eventContent;
+                    
+                    // Show the modal
+                    var eventModal = new bootstrap.Modal(document.getElementById('eventModal'));
+                    eventModal.show();
+                })
+                .catch(error => {
+                    console.error('Error loading event details:', error);
+                    document.getElementById('eventModalBody').innerHTML = 'Error loading event details.';
+                });
+            
+            info.jsEvent.preventDefault();
+        },
+        dateClick: function(info) {
+            // When a date is clicked, navigate to add entry with the date pre-filled
+            window.location.href = '{{ url_for("calendar.add_entry") }}?date=' + info.dateStr;
+        },
+        eventTimeFormat: { 
+            hour: 'numeric',
+            minute: '2-digit',
+            meridiem: 'short'
+        },
+        firstDay: 1, // Start week on Monday
+        height: 'auto',
+        navLinks: true,
+        nowIndicator: true
+    });
+    
+    calendar.render();
+    
+    // Handle window resize
+    window.addEventListener('resize', function() {
+        calendar.updateSize();
+    });
+});
+</script>
+{% endblock %}
