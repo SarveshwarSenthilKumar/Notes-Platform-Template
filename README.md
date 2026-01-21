@@ -5,3 +5,6 @@ This is a template repository for creating a notes management platform. It's cur
 ## Status: 🚧 In Development
 
 Working on retrofitting the law notes app, will be ready before next semester.
+
+Created by Sarveshwar Senthil Kumar
+Original Law Notes can be found at https://github.com/SarveshwarSenthilKumar/LexiconJuris
