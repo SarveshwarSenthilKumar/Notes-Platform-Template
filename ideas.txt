@@ -4,3 +4,7 @@ add a unit distinguisher for unit tests, search by unit
 add an ai created example feature
 update readme and add everything done so far
 
+Add admin system
+Add reset functions and other admin features
+Add a logging system for edits, deletes, and other
+Use a single controllable for all name and tab headings
