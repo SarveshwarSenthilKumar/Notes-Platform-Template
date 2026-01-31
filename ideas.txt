@@ -5,3 +5,9 @@ Add admin system
 Add reset functions and other admin features
 Add a logging system for edits, deletes, and other
 Use a single controllable for all name and tab headings
+
+Copy over and migrate from lexiconjuris for bug fizes
+get rid of readme.md
+reset all databases
+update readme for new version
+organize all db files into a db folder
