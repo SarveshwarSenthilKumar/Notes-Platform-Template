@@ -2,12 +2,12 @@ import sqlite3
 import os
 
 # Create or overwrite the dictionary database
-database = open('dictionary.db', 'w')
+database = open('../dictionary.db', 'w')
 database.truncate(0)  
 database.close()
 
 # Connect to the SQLite database
-connection = sqlite3.connect("dictionary.db")
+connection = sqlite3.connect("../dictionary.db")
 crsr = connection.cursor()
 
 # Define the table structure

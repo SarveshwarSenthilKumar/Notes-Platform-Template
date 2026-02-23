@@ -2,7 +2,7 @@ import sqlite3
 import os
 
 # Create or overwrite the notes database
-database = open('notes.db', 'w')
+database = open('../notes.db', 'w')
 database.truncate(0)  
 database.close()
 
@@ -10,7 +10,7 @@ database.close()
 os.makedirs('uploads/worksheets', exist_ok=True)
 
 # Connect to the SQLite database
-connection = sqlite3.connect("notes.db")
+connection = sqlite3.connect("../notes.db")
 crsr = connection.cursor()
 
 # Define the notes table structure

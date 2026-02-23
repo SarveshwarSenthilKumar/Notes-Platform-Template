@@ -3,10 +3,10 @@ import os
 
 def create_calendar_db():
     # Create or overwrite the calendar database
-    if os.path.exists('calendar.db'):
-        os.remove('calendar.db')
+    if os.path.exists('../calendar.db'):
+        os.remove('../calendar.db')
     
-    connection = sqlite3.connect("calendar.db")
+    connection = sqlite3.connect("../calendar.db")
     crsr = connection.cursor()
 
     # Create calendar_entries table
