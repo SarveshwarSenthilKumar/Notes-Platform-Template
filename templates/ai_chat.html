@@ -1,0 +1,695 @@
+{% extends "base.html" %}
+
+{% block styles %}
+<style>
+    :root {
+        --primary-color: #2563eb;
+        --primary-hover: #1d4ed8;
+        --bg-color: #0f172a;
+        --card-bg: #1e293b;
+        --text-primary: #f8fafc;
+        --text-secondary: #94a3b8;
+        --border-color: #334155;
+        --user-bg: #1e293b;
+        --ai-bg: #1e293b;
+        --code-bg: #0f172a;
+        --input-bg: #1e293b;
+    }
+
+    /* Force dark theme */
+    body {
+        color-scheme: dark;
+    }
+    
+    [data-bs-theme="dark"],
+    [data-bs-theme="light"] {
+        --bg-color: #0f172a;
+        --card-bg: #1e293b;
+        --text-primary: #f8fafc;
+        --text-secondary: #94a3b8;
+        --border-color: #334155;
+        --user-bg: #1e293b;
+        --ai-bg: #1e293b;
+        --code-bg: #0f172a;
+        --input-bg: #1e293b;
+    }
+
+    body {
+        background-color: var(--bg-color);
+        color: var(--text-primary);
+    }
+
+    .chat-container {
+        max-width: 1000px;
+        margin: 0 auto;
+        height: calc(100vh - 160px);
+        display: flex;
+        flex-direction: column;
+    }
+
+    .chat-header {
+        padding: 1rem;
+        border-bottom: 1px solid var(--border-color);
+        background-color: var(--card-bg);
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+
+    #chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 1rem;
+        scroll-behavior: smooth;
+    }
+
+    .message {
+        display: flex;
+        gap: 1rem;
+        padding: 1.5rem 1rem;
+        border-bottom: 1px solid var(--border-color);
+        background-color: var(--ai-bg);
+    }
+
+    .message.user {
+        background-color: var(--user-bg);
+    }
+
+    .message-avatar {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        background-color: var(--primary-color);
+        color: white;
+        font-weight: bold;
+    }
+
+    .message-content {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .message-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 0.5rem;
+        gap: 0.5rem;
+    }
+
+    .message-sender {
+        font-weight: bold;
+        color: var(--text-primary);
+    }
+
+    .message-time {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+    }
+
+    .message-text {
+        line-height: 1.6;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+
+    .message-text p {
+        margin-bottom: 1em;
+    }
+
+    .message-text p:last-child {
+        margin-bottom: 0;
+    }
+
+    .message-actions {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 0.5rem;
+        opacity: 0;
+        transition: opacity 0.2s;
+    }
+
+    .message:hover .message-actions {
+        opacity: 1;
+    }
+
+    .message-action-btn {
+        background: none;
+        border: none;
+        color: var(--text-secondary);
+        cursor: pointer;
+        padding: 0.25rem;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .message-action-btn:hover {
+        background-color: rgba(0, 0, 0, 0.1);
+        color: var(--text-primary);
+    }
+
+    .input-container {
+        padding: 1rem;
+        background-color: var(--card-bg);
+        border-top: 1px solid var(--border-color);
+        position: sticky;
+        bottom: 0;
+    }
+
+    .input-group {
+        max-width: 800px;
+        margin: 0 auto;
+        position: relative;
+    }
+
+    #user-message {
+        border-radius: 0.5rem;
+        padding: 0.75rem 3rem 0.75rem 1.25rem;
+        background-color: var(--input-bg);
+        border: 1px solid var(--border-color);
+        color: var(--text-primary);
+        resize: none;
+        min-height: 24px;
+        max-height: 200px;
+        overflow-y: auto;
+        outline: none;
+    }
+    
+    #user-message[placeholder]:empty:before {
+        content: attr(placeholder);
+        color: var(--text-secondary);
+        pointer-events: none;
+        display: block;
+    }
+
+    #user-message:focus {
+        box-shadow: 0 0 0 2px var(--primary-color);
+        border-color: var(--primary-color);
+    }
+
+    #send-button {
+        position: absolute;
+        right: 0.5rem;
+        bottom: 0.5rem;
+        background: var(--primary-color);
+        border: none;
+        border-radius: 0.5rem;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        transition: all 0.2s;
+        cursor: pointer;
+        opacity: 1;
+    }
+    
+    #send-button:not(:disabled):hover {
+        background: var(--primary-hover);
+        transform: scale(1.05);
+    }
+
+    #send-button:hover {
+        background-color: var(--primary-hover);
+    }
+
+    #send-button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .typing-indicator {
+        display: flex;
+        gap: 0.25rem;
+        padding: 0.5rem 0;
+    }
+
+    .typing-dot {
+        width: 8px;
+        height: 8px;
+        background-color: var(--text-secondary);
+        border-radius: 50%;
+        display: inline-block;
+        animation: typing 1.4s infinite ease-in-out;
+    }
+
+    .typing-dot:nth-child(1) { animation-delay: 0s; }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes typing {
+        0%, 60%, 100% { transform: translateY(0); }
+        30% { transform: translateY(-4px); }
+    }
+
+    .welcome-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        text-align: center;
+        padding: 2rem;
+        color: var(--text-secondary);
+    }
+
+    .welcome-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        color: var(--primary-color);
+    }
+
+    .suggestions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        justify-content: center;
+        margin-top: 1.5rem;
+    }
+
+    .suggestion-btn {
+        background-color: var(--bg-color);
+        border: 1px solid var(--border-color);
+        border-radius: 1rem;
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+        color: var(--text-primary);
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .suggestion-btn:hover {
+        background-color: var(--primary-color);
+        color: white;
+        border-color: var(--primary-color);
+    }
+
+    pre {
+        background-color: var(--code-bg) !important;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        overflow-x: auto;
+    }
+
+    code {
+        font-family: 'Courier New', Courier, monospace;
+        font-size: 0.9em;
+        color: var(--text-primary);
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .chat-container {
+            height: calc(100vh - 120px);
+        }
+        
+        .message {
+            padding: 1rem 0.75rem;
+        }
+        
+        .message-avatar {
+            width: 24px;
+            height: 24px;
+            font-size: 0.75rem;
+        }
+        
+        .message-sender {
+            font-size: 0.9rem;
+        }
+        
+        .message-time {
+            font-size: 0.7rem;
+        }
+        
+        .message-text {
+            font-size: 0.95rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="chat-container">
+    <div class="chat-header">
+        <h4 class="mb-0">AI Study Assistant</h4>
+        <small class="text-muted">Ask questions about your notes or request study materials</small>
+    </div>
+    
+    <div id="chat-messages">
+        <div class="welcome-container" id="welcome-message">
+            <div class="welcome-icon">
+                <i class="fas fa-robot"></i>
+            </div>
+            <h2>How can I help you today?</h2>
+            <p class="mb-4">I'm your AI study assistant. Ask me anything about your notes or request study materials.</p>
+            <div class="suggestions">
+                <button class="suggestion-btn">Summarize my notes on...</button>
+                <button class="suggestion-btn">Create flashcards for...</button>
+                <button class="suggestion-btn">Explain this concept...</button>
+                <button class="suggestion-btn">Help me study for...</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="input-container">
+        <div class="input-group">
+            <div id="typing-indicator" class="typing-indicator" style="display: none;">
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+            </div>
+            <div class="position-relative w-100">
+                <div id="user-message" 
+                     contenteditable="true" 
+                     role="textbox" 
+                     aria-multiline="true"
+                     placeholder="Message AI Study Assistant..."
+                     spellcheck="true"
+                     data-gramm="false"></div>
+                <button id="send-button" disabled>
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const chatMessages = document.getElementById('chat-messages');
+        const userInput = document.getElementById('user-message');
+        const sendButton = document.getElementById('send-button');
+        const typingIndicator = document.getElementById('typing-indicator');
+        const welcomeMessage = document.getElementById('welcome-message');
+        let isProcessing = false;
+        
+        // Initialize send button state
+        updateSendButton();
+        
+        // Auto-resize textarea
+        function adjustHeight() {
+            userInput.style.height = 'auto';
+            userInput.style.height = (userInput.scrollHeight) + 'px';
+            
+            // Enable/disable send button
+            sendButton.disabled = !userInput.textContent.trim();
+        }
+        
+        // Handle input events for the contenteditable div
+        userInput.addEventListener('input', function() {
+            adjustHeight();
+            updateSendButton();
+        });
+        
+        // Handle paste events to remove formatting
+        userInput.addEventListener('paste', function(e) {
+            e.preventDefault();
+            const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+            document.execCommand('insertText', false, text);
+        });
+        
+        // Handle suggestion clicks
+        document.querySelectorAll('.suggestion-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                userInput.focus();
+                const selection = window.getSelection();
+                const range = document.createRange();
+                
+                // Clear existing content
+                while (userInput.firstChild) {
+                    userInput.removeChild(userInput.firstChild);
+                }
+                
+                // Add new content
+                const textNode = document.createTextNode(this.textContent);
+                userInput.appendChild(textNode);
+                
+                // Set cursor to the end
+                range.selectNodeContents(userInput);
+                range.collapse(false);
+                selection.removeAllRanges();
+                selection.addRange(range);
+                
+                // Trigger input event
+                userInput.dispatchEvent(new Event('input'));
+            });
+        });
+        
+        // Handle send button click
+        sendButton.addEventListener('click', sendMessage);
+        
+        // Handle Enter key (Shift+Enter for new line, Enter to send)
+        userInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                if (!isProcessing && !sendButton.disabled) {
+                    sendMessage();
+                }
+                return false;
+            }
+        });
+        
+        // Also handle keyup for better reliability
+        userInput.addEventListener('keyup', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                return false;
+            }
+        });
+        
+        // Update send button state based on input
+        function updateSendButton() {
+            const hasText = userInput.textContent.trim().length > 0;
+            sendButton.disabled = !hasText || isProcessing;
+            if (hasText) {
+                sendButton.style.opacity = '1';
+                sendButton.style.cursor = 'pointer';
+            } else {
+                sendButton.style.opacity = '0.5';
+                sendButton.style.cursor = 'not-allowed';
+            }
+        }
+        
+        function formatMessageText(text) {
+            // Simple markdown to HTML conversion
+            return text
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')  // Bold
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')              // Italic
+                .replace(/`([^`]+)`/g, '<code>$1</code>')           // Inline code
+                .replace(/```(\w*)\n([\s\S]*?)\n```/g, 
+                    '<pre><code class="language-$1">$2</code></pre>') // Code blocks
+                .replace(/\n/g, '<br>');                           // Line breaks
+        }
+        
+        function addMessage(sender, text, isHtml = false) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+            
+            const avatar = document.createElement('div');
+            avatar.className = 'message-avatar';
+            avatar.innerHTML = sender === 'user' ? '<i class="fas fa-user"></i>' : '<i class="fas fa-robot"></i>';
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            
+            const headerDiv = document.createElement('div');
+            headerDiv.className = 'message-header';
+            
+            const senderSpan = document.createElement('span');
+            senderSpan.className = 'message-sender';
+            senderSpan.textContent = sender === 'user' ? 'You' : 'AI Assistant';
+            
+            const timeSpan = document.createElement('span');
+            timeSpan.className = 'message-time';
+            timeSpan.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            
+            const textDiv = document.createElement('div');
+            textDiv.className = 'message-text';
+            if (isHtml) {
+                textDiv.innerHTML = text;
+            } else {
+                textDiv.innerHTML = formatMessageText(text);
+            }
+            
+            const actionsDiv = document.createElement('div');
+            actionsDiv.className = 'message-actions';
+            
+            if (sender === 'assistant') {
+                const copyButton = document.createElement('button');
+                copyButton.className = 'message-action-btn';
+                copyButton.title = 'Copy to clipboard';
+                copyButton.innerHTML = '<i class="far fa-copy"></i>';
+                copyButton.addEventListener('click', () => {
+                    const textToCopy = textDiv.innerText;
+                    navigator.clipboard.writeText(textToCopy).then(() => {
+                        const originalIcon = copyButton.innerHTML;
+                        copyButton.innerHTML = '<i class="fas fa-check"></i>';
+                        copyButton.title = 'Copied!';
+                        setTimeout(() => {
+                            copyButton.innerHTML = originalIcon;
+                            copyButton.title = 'Copy to clipboard';
+                        }, 2000);
+                    });
+                });
+                
+                actionsDiv.appendChild(copyButton);
+            }
+            
+            headerDiv.appendChild(senderSpan);
+            headerDiv.appendChild(document.createTextNode(' · '));
+            headerDiv.appendChild(timeSpan);
+            
+            contentDiv.appendChild(headerDiv);
+            contentDiv.appendChild(textDiv);
+            contentDiv.appendChild(actionsDiv);
+            
+            messageDiv.appendChild(avatar);
+            messageDiv.appendChild(contentDiv);
+            
+            // Hide welcome message if it's the first message
+            if (welcomeMessage && document.querySelectorAll('.message').length === 0) {
+                welcomeMessage.style.display = 'none';
+            }
+            
+            chatMessages.appendChild(messageDiv);
+            scrollToBottom();
+            
+            return messageDiv;
+        }
+        
+        function scrollToBottom() {
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        async function sendMessage() {
+            const message = userInput.textContent.trim();
+            if (!message || isProcessing) return;
+            
+            // Add user message to chat
+            addMessage('user', message);
+            
+            // Clear input and reset height
+            userInput.textContent = '';
+            adjustHeight();
+            updateSendButton();
+            
+            // Show typing indicator
+            isProcessing = true;
+            typingIndicator.style.display = 'flex';
+            scrollToBottom();
+            
+            try {
+                // Send message to server
+                const response = await fetch('/ai/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message: message })
+                });
+                
+                const data = await response.json();
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to get response from server');
+                }
+                
+                addMessage('assistant', data.response);
+            } catch (error) {
+                console.error('Error:', error);
+                addMessage('assistant', `Sorry, I encountered an error: ${error.message}`);
+            } finally {
+                isProcessing = false;
+                typingIndicator.style.display = 'none';
+                scrollToBottom();
+                userInput.focus();
+            }
+        }
+        
+        // Function to add a message to the chat
+        function addMessage(sender, text) {
+            // Create message container
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+            
+            // Create avatar
+            const avatar = document.createElement('div');
+            avatar.className = 'message-avatar';
+            avatar.innerHTML = sender === 'user' ? '<i class="fas fa-user"></i>' : '<i class="fas fa-robot"></i>';
+            
+            // Create message content container
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            
+            // Create message header with sender name and time
+            const headerDiv = document.createElement('div');
+            headerDiv.className = 'message-header';
+            
+            const senderSpan = document.createElement('span');
+            senderSpan.className = 'message-sender';
+            senderSpan.textContent = sender === 'user' ? 'You' : 'AI Assistant';
+            
+            const timeSpan = document.createElement('span');
+            timeSpan.className = 'message-time';
+            timeSpan.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            
+            // Create message text container
+            const textDiv = document.createElement('div');
+            textDiv.className = 'message-text';
+            textDiv.innerHTML = formatMessageText(text);
+            
+            // Create message actions (copy button for AI responses)
+            const actionsDiv = document.createElement('div');
+            actionsDiv.className = 'message-actions';
+            
+            if (sender === 'assistant') {
+                const copyButton = document.createElement('button');
+                copyButton.className = 'message-action-btn';
+                copyButton.title = 'Copy to clipboard';
+                copyButton.innerHTML = '<i class="far fa-copy"></i>';
+                copyButton.addEventListener('click', () => {
+                    const textToCopy = textDiv.innerText;
+                    navigator.clipboard.writeText(textToCopy).then(() => {
+                        const originalIcon = copyButton.innerHTML;
+                        copyButton.innerHTML = '<i class="fas fa-check"></i>';
+                        copyButton.title = 'Copied!';
+                        setTimeout(() => {
+                            copyButton.innerHTML = originalIcon;
+                            copyButton.title = 'Copy to clipboard';
+                        }, 2000);
+                    });
+                });
+                actionsDiv.appendChild(copyButton);
+            }
+            
+            // Assemble the message
+            headerDiv.appendChild(senderSpan);
+            headerDiv.appendChild(document.createTextNode(' · '));
+            headerDiv.appendChild(timeSpan);
+            
+            contentDiv.appendChild(headerDiv);
+            contentDiv.appendChild(textDiv);
+            contentDiv.appendChild(actionsDiv);
+            
+            messageDiv.appendChild(avatar);
+            messageDiv.appendChild(contentDiv);
+            
+            // Hide welcome message if it's the first message
+            if (welcomeMessage && document.querySelectorAll('.message').length === 0) {
+                welcomeMessage.style.display = 'none';
+            }
+            
+            chatMessages.appendChild(messageDiv);
+            scrollToBottom();
+        }
+    });
+</script>
+{% endblock %}

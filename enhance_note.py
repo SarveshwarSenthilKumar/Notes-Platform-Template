@@ -111,7 +111,7 @@ def enhance_note_content(title, content, comment=None):
             full_prompt,
             generation_config=genai.types.GenerationConfig(
                 temperature=0.5,  # Slightly more focused responses
-                max_output_tokens=2000,
+                max_output_tokens=40000,
                 top_p=0.8,
                 top_k=32
             )

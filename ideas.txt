@@ -1,13 +1,10 @@
 Add note logs to track what is done each day
-add test feature
+update readme and add everything done so far
+add a clause to prompt to say dont say these are your new ai enhanced notes
+fix United Nations note
+fix all new international law notes
+Fix philosophers note
+go back and check notes for cut issues
 
-Add admin system
-Add reset functions and other admin features
-Add a logging system for edits, deletes, and other
-Use a single controllable for all name and tab headings
-
-Copy over and migrate from lexiconjuris for bug fizes
-get rid of readme.md
-reset all databases
-update readme for new version
-organize all db files into a db folder
+---
+Officially completed note-taking phase as of January 28th, 2025. Now focusing on template development and UI/UX improvements.
