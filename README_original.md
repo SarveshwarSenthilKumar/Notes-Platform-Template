@@ -1,4 +1,4 @@
-# LexiconJuris
+# LexiconJuris (Old)
 
 > ⚠️ **DEPRECATION NOTICE**: This project is no longer actively maintained as of January 29th, 2026. For any inquiries or additional information, please contact the repository owner at sarveshwar313@gmail.com.
 
